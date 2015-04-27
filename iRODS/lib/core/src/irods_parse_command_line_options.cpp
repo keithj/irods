@@ -7,10 +7,10 @@
 #include <iostream>
 
 typedef std::vector< std::string > path_list_t;
-
-
-// assumes a function usage matches this siguature in the executable
-void usage();
+static bool is_stdout( const std::string& _p ) {
+    std::cout << "is_stdout : [" << _p << "]" << std::endl;
+    return _p == "-";
+}
 
 // this is global due to the fact that the storage of the
 // various strings used by _rods_args is managed by the
@@ -76,19 +76,24 @@ static int parse_program_options(
                   << _e.what()
                   << std::endl
                   << std::endl;
-        usage();
-        return -1;
+        return SYS_INVALID_INPUT_PARAM;
 
     }
-
-    // path args are passed out in a separate parameter
-    //if( global_prog_ops_var_map.count( "path_args" ) ) {
-    //}
+  
+    bool have_verify = global_prog_ops_var_map.count( "verify_checksum" ) > 0;
+    bool have_stdout = _paths.end() != 
+                           std::find(
+                               _paths.begin(),
+                               _paths.end(),
+                               std::string( "-" ) );
+    if( have_verify && have_stdout ) {
+        std::cerr << "Cannot verify checksum if data is piped to stdout." << std::endl << std::endl;
+        return SYS_INVALID_INPUT_PARAM;
+    }
 
     memset( &_rods_args, 0, sizeof( _rods_args ) );
     if( global_prog_ops_var_map.count( "help" ) ) {
-        usage();
-        return -1;
+        return SYS_INVALID_INPUT_PARAM;
     }
     if( global_prog_ops_var_map.count( "all" ) ) {
         _rods_args.all = 1;

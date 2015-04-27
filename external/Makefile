@@ -26,7 +26,7 @@ LIBARCHIVEVERSIONMAKE=$(LIBARCHIVEVERSION)/Makefile
 JANSSONVERSIONARCHIVE=$(JANSSONVERSION).tar.gz
 JANSSONVERSIONMAKE=$(JANSSONVERSION)/Makefile
 BOOSTVERSIONARCHIVE=$(BOOSTVERSION).tar.gz
-BOOSTVERSIONMAKE=$(BOOSTVERSION)/bjam
+BOOSTVERSIONMAKE=$(BOOSTVERSION)/b2
 HDF5VERSIONARCHIVE=$(HDF5VERSION).tar.gz
 HDF5VERSIONMAKE=$(HDF5VERSION)/Makefile
 NETCDFVERSIONARCHIVE=$(NETCDFVERSION).tar.gz
@@ -40,6 +40,7 @@ LIBS3VERSIONMAKE=$(LIBS3VERSION)/GNUmakefile
 AVROVERSIONARCHIVE=$(AVROVERSION).tar.gz
 AVROVERSIONMAKE=$(AVROVERSION)/Makefile
 ZEROMQVERSIONARCHIVE=$(ZEROMQVERSION).tar.gz
+ZEROMQVERSIONCONFIGURE=$(ZEROMQVERSION)/configure
 ZEROMQVERSIONMAKE=$(ZEROMQVERSION)/Makefile
 CPPZMQVERSIONARCHIVE=$(CPPZMQVERSION).tar.gz
 CPPZMQVERSIONMAKE=$(CPPZMQVERSION)/Makefile
@@ -180,6 +181,9 @@ $(BOOSTVERSIONARCHIVE) :
 
 $(BOOSTVERSIONMAKE) : $(BOOSTVERSIONARCHIVE)
 	@tar zxf $(BOOSTVERSIONARCHIVE)
+	@sed "s/\\(future_state::state get_state(boost::unique_lock<boost::mutex>&\\) lk\\() const\\)/\\1\\2/" $(BOOSTVERSION)/boost/thread/future.hpp > /tmp/future.hpp
+	@rsync -c /tmp/future.hpp $(BOOSTVERSION)/boost/thread/future.hpp
+	@rm /tmp/future.hpp
 	@cd $(BOOSTVERSION) ; \
 		./bootstrap.sh --with-libraries=program_options,filesystem,system,thread,regex,program_options,iostreams,chrono,date_time
 
@@ -228,10 +232,14 @@ avro : $(AVROVERSIONMAKE)
 $(ZEROMQVERSIONARCHIVE) :
 	@wget $(RENCI_FTP_EXTERNAL)/$(ZEROMQVERSIONARCHIVE) 2>&1
 
-$(ZEROMQVERSIONMAKE) : $(ZEROMQVERSIONARCHIVE)
-	@tar zxf $(ZEROMQVERSIONARCHIVE)
+$(ZEROMQVERSIONCONFIGURE) : $(ZEROMQVERSIONARCHIVE)
+	@tar -zxf $(ZEROMQVERSIONARCHIVE)
+	@cd $(ZEROMQVERSION); \
+		./autogen.sh
+
+$(ZEROMQVERSIONMAKE) : $(ZEROMQVERSIONCONFIGURE)
 	@cd $(ZEROMQVERSION) ; \
-		env ac_cv_lib_sodium_sodium_init="no" ./configure
+		env ac_cv_lib_sodium_sodium_init="no" ac_cv_lib_gssapi_krb5_gss_init_sec_context="no" ./configure
 
 zeromq : $(ZEROMQVERSIONMAKE) cppzmq
 	@$(MAKE) -C $(ZEROMQVERSION)

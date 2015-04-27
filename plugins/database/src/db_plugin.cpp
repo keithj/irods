@@ -110,7 +110,7 @@ const std::string ZONE_PROP( "irods_zone_property" );
    and the input string is at most that long.
  */
 int
-parseUserName( const char *fullUserNameIn, char *userName, char *userZone ) {
+validateAndParseUserName( const char *fullUserNameIn, char *userName, char *userZone ) {
     const std::string input( fullUserNameIn );
     boost::smatch matches;
     // This regex matches usernames with no hashes and optionally one at symbol,
@@ -345,7 +345,6 @@ void removeMetaMapAndAVU( char *dataObjNumber ) {
  */
 static int removeAVUs() {
     char tSQL[MAX_SQL_SIZE];
-    int status;
 
     if ( logSQL != 0 ) {
         rodsLog( LOG_SQL, "removeAVUs SQL 1 " );
@@ -365,8 +364,8 @@ static int removeAVUs() {
     snprintf( tSQL, MAX_SQL_SIZE,
               "delete from R_META_MAIN where meta_id in (select meta_id from R_META_MAIN except select meta_id from R_OBJT_METAMAP)" );
 #endif
-    status =  cmlExecuteNoAnswerSql( tSQL, &icss );
-    rodsLog( LOG_NOTICE, "removeAVUs status=%d\n", status );
+    const int status =  cmlExecuteNoAnswerSql( tSQL, &icss );
+    rodsLog( LOG_DEBUG, "removeAVUs status=%d\n", status );
 
     return status;
 }
@@ -1423,7 +1422,7 @@ rodsLong_t checkAndGetObjectId(
             return CAT_INSUFFICIENT_PRIVILEGE_LEVEL;
         }
 
-        status = parseUserName( name, userName, userZone );
+        status = validateAndParseUserName( name, userName, userZone );
         if ( status ) {
             return status;
         }
@@ -1852,7 +1851,7 @@ icatGetTicketUserId( irods::plugin_property_map& _prop_map, char *userName, char
     }
 
     snprintf( zoneToUse, sizeof( zoneToUse ), "%s", zone.c_str() );
-    status = parseUserName( userName, userName2, userZone );
+    status = validateAndParseUserName( userName, userName2, userZone );
     if ( status ) {
         return status;
     }
@@ -1897,7 +1896,7 @@ icatGetTicketGroupId( irods::plugin_property_map& _prop_map, char *groupName, ch
     }
 
     snprintf( zoneToUse, sizeof( zoneToUse ), "%s", zone.c_str() );
-    status = parseUserName( groupName, groupName2, groupZone );
+    status = validateAndParseUserName( groupName, groupName2, groupZone );
     if ( status ) {
         return status;
     }
@@ -4806,7 +4805,7 @@ extern "C" {
             snprintf( zoneToUse, sizeof( zoneToUse ), "%s", _user_info->rodsZone );
         }
 
-        status = parseUserName( _user_info->userName, userName2, zoneName );
+        status = validateAndParseUserName( _user_info->userName, userName2, zoneName );
         if ( status ) {
             return ERROR( status, "Invalid username format" );
         }
@@ -5066,7 +5065,7 @@ extern "C" {
         }
 
         /* Parse input name into user and zone */
-        status = parseUserName( _coll_info->collOwnerName, userName2, zoneName );
+        status = validateAndParseUserName( _coll_info->collOwnerName, userName2, zoneName );
         if ( status ) {
             return ERROR( status, "Invalid username format" );
         }
@@ -6923,7 +6922,7 @@ extern "C" {
                   ( unsigned char )md5Buf[10], ( unsigned char )md5Buf[11],
                   ( unsigned char )md5Buf[12], ( unsigned char )md5Buf[13],
                   ( unsigned char )md5Buf[14], ( unsigned char )md5Buf[15] );
-        status = parseUserName( _user_name, userName2, userZone );
+        status = validateAndParseUserName( _user_name, userName2, userZone );
         if ( status ) {
             return ERROR( status, "Invalid username format" );
         }
@@ -7314,8 +7313,8 @@ checkLevel:
             return ERROR(
                        CAT_INVALID_ARGUMENT,
                        "null parameter" );
-        } 
-        
+        }
+
         int temp_password_time = 0;
         ret = irods::get_advanced_setting<int>(
                   irods::CFG_DEF_TEMP_PASSWORD_LIFETIME,
@@ -7486,7 +7485,7 @@ checkLevel:
                        CAT_INVALID_ARGUMENT,
                        "null parameter" );
         }
-        
+
         int temp_password_time = 0;
         ret = irods::get_advanced_setting<int>(
                   irods::CFG_DEF_TEMP_PASSWORD_LIFETIME,
@@ -7980,7 +7979,7 @@ checkLevel:
         auditComment[0] = '\0';
         snprintf( auditUserName, sizeof( auditUserName ), "%s", _user_name );
 
-        status = parseUserName( _user_name, userName2, zoneName );
+        status = validateAndParseUserName( _user_name, userName2, zoneName );
         if ( status ) {
             return ERROR( status, "Invalid username format" );
         }
@@ -8326,7 +8325,7 @@ checkLevel:
             snprintf( zoneToUse, MAX_NAME_LEN, "%s", zone.c_str() );
         }
 
-        status = parseUserName( _user_name, userName2, zoneName );
+        status = validateAndParseUserName( _user_name, userName2, zoneName );
         if ( status ) {
             return ERROR( status, "Invalid username format" );
         }
@@ -9127,7 +9126,7 @@ checkLevel:
         snprintf( oldPath2, sizeof( oldPath2 ), "%s%%", _old_path );
 
         if ( _user_name != NULL && *_user_name != '\0' ) {
-            status = parseUserName( _user_name, userName2, userZone );
+            status = validateAndParseUserName( _user_name, userName2, userZone );
             if ( status ) {
                 return ERROR( status, "Invalid username format" );
             }
@@ -9415,7 +9414,7 @@ checkLevel:
             snprintf( userZone, sizeof( userZone ), "%s", zone.c_str() );
         }
 
-        status = parseUserName( _user_info->userName, userName2, zoneName );
+        status = validateAndParseUserName( _user_info->userName, userName2, zoneName );
         if ( status ) {
             return ERROR( status, "Invalid username format" );
         }
@@ -10335,7 +10334,7 @@ checkLevel:
                 return ERROR( CAT_INSUFFICIENT_PRIVILEGE_LEVEL, "insufficient privilege" );
             }
 
-            status = parseUserName( _name, userName, userZone );
+            status = validateAndParseUserName( _name, userName, userZone );
             if ( status ) {
                 return ERROR( status, "Invalid username format" );
             }
@@ -10751,7 +10750,7 @@ checkLevel:
                 return ERROR( CAT_INSUFFICIENT_PRIVILEGE_LEVEL, "insufficient privilege" );
             }
 
-            status = parseUserName( _name, userName, userZone );
+            status = validateAndParseUserName( _name, userName, userZone );
             if ( status ) {
                 return ERROR( status, "Invalid username format" );
             }
@@ -13368,7 +13367,7 @@ checkLevel:
         }
 
 
-        status = parseUserName( _name, userName, userZone );
+        status = validateAndParseUserName( _name, userName, userZone );
         if ( status ) {
             return ERROR( status, "Invalid username format" );
         }
@@ -13566,43 +13565,32 @@ checkLevel:
 
     irods::error db_del_unused_avus_op(
         irods::plugin_context& _ctx ) {
-        // =-=-=-=-=-=-=-
-        // check the context
         irods::error ret = _ctx.valid();
         if ( !ret.ok() ) {
             return PASS( ret );
         }
 
-        // =-=-=-=-=-=-=-
-        // get a postgres object from the context
-        /*irods::postgres_object_ptr pg;
-        ret = make_db_ptr( _ctx.fco(), pg );
-        if ( !ret.ok() ) {
-            return PASS( ret );
-
-        }*/
-
-        // =-=-=-=-=-=-=-
-        // extract the icss property
-//        icatSessionStruct icss;
-//        _ctx.prop_map().get< icatSessionStruct >( ICSS_PROP, icss );
         /*
            Remove any AVUs that are currently not associated with any object.
            This is done as a separate operation for efficiency.  See
            'iadmin h rum'.
         */
-        int status;
-        status = removeAVUs();
-        if ( status < 0 ) {
-            return ERROR( status, "removeAVUs failed" );
-        }
+        const int remove_status = removeAVUs();
+        int commit_status = 0;
 
-        if ( status == 0 ) {
-            status =  cmlExecuteNoAnswerSql( "commit", &icss );
-            return SUCCESS();
+        if (   remove_status == CAT_SUCCESS_BUT_WITH_NO_INFO
+            || remove_status == 0 ) {
+            commit_status = cmlExecuteNoAnswerSql( "commit", &icss );
         }
         else {
-            return ERROR( status, "commit failed" );
+            return ERROR( remove_status, "removeAVUs failed" );
+        }
+
+        if (   commit_status == CAT_SUCCESS_BUT_WITH_NO_INFO
+            || commit_status == 0 ) {
+            return SUCCESS();
+        } else {
+            return ERROR( commit_status, "commit failed" );
         }
 
     } // db_del_unused_avus_op
