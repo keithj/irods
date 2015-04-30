@@ -4,9 +4,9 @@
  * iget - The irods get utility
 */
 
-#include "rodsClient.hpp"
-#include "parseCommandLine.hpp"
-#include "rodsPath.hpp"
+#include "rodsClient.h"
+#include "parseCommandLine.h"
+#include "rodsPath.h"
 #include "getUtil.hpp"
 #include "irods_client_api_table.hpp"
 #include "irods_pack_table.hpp"
@@ -108,6 +108,12 @@ usage() {
         "[--rlock]  srcDataObj ... -",
         "Get data-objects or collections from irods space, either to the specified",
         "local area or to the current working directory.",
+        " ",
+        "Data Objects with multiple replicas in iRODS may have one or more 'stale'",
+        "replicas (will not display the & before the filename in ils -l or ils -L).",
+        "iRODS will not serve a stale or 'dirty' replica unless asked specifically",
+        "(by using the -R option). Without the -R option, a clean replica will be",
+        "selected and served to the client.",
         " ",
         "If the destLocalFile is '-', the files read from the server will be ",
         "written to the standard output (stdout). Similar to the UNIX 'cat'",

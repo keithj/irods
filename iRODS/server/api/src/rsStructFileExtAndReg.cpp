@@ -11,7 +11,7 @@
 #include "resource.hpp"
 #include "specColl.hpp"
 #include "physPath.hpp"
-#include "objStat.hpp"
+#include "objStat.h"
 #include "miscServerFunct.hpp"
 #include "fileOpr.hpp"
 #include "rcGlobalExtern.hpp"
@@ -95,7 +95,46 @@ rsStructFileExtAndReg( rsComm_t *rsComm,
             std::stringstream msg;
             msg << "rsStructFileExtAndReg :: failed in irods::resource_redirect for [";
             msg << dataObjInp.objPath << "]";
-            irods::log( PASSMSG( msg.str(), ret ) );
+            irods::error pass_err = PASSMSG( msg.str(), ret );
+            irods::log( pass_err );
+
+            if( CAT_NO_ROWS_FOUND == pass_err.code() ) {
+                char* resc_name_kw = getValByKey( &dataObjInp.condInput, RESC_NAME_KW );
+                std::string msg( structFileExtAndRegInp->objPath );
+                msg += " does not exist";
+                if( resc_name_kw ) {
+                    msg += " or is not a replica on the target resource [";
+                    msg += resc_name_kw;
+                    msg += "]";
+                }
+                addRErrorMsg(
+                    &rsComm->rError,
+                    REPLICA_NOT_IN_RESC,
+                    msg.c_str() );
+                ret.code( REPLICA_NOT_IN_RESC ); // repave to be real error
+            }
+            else if( SYS_RESC_DOES_NOT_EXIST == pass_err.code() ) {
+                char* resc_name_kw = getValByKey( &dataObjInp.condInput, RESC_NAME_KW );
+                std::string msg( structFileExtAndRegInp->objPath );
+                msg += " resource does not exist ";
+                if( resc_name_kw ) {
+                    msg += "[";
+                    msg += resc_name_kw;
+                    msg += "]";
+                }
+                addRErrorMsg(
+                    &rsComm->rError,
+                    SYS_RESC_DOES_NOT_EXIST,
+                    msg.c_str() );
+
+            }
+            else {
+                addRErrorMsg(
+                    &rsComm->rError,
+                    pass_err.code(),
+                    pass_err.result().c_str() );
+            }
+
             return ret.code();
         }
 
