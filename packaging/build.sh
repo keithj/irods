@@ -226,6 +226,12 @@ echo "Build Directory set to [$BUILDDIR]"
 # populate VERSION.json from VERSION.json.dist with current information
 cd $BUILDDIR
 python packaging/generate_version_json.py > VERSION.json
+
+if [ "RUNINPLACE"=="1" ] ; then
+    python -c "from __future__ import print_function; import datetime; import json; data=json.load(open('VERSION.json')); data['installation_time'] = datetime.datetime.utcnow().strftime( '%Y-%m-%dT%H:%M:%SZ' ); print(json.dumps(data, indent=4, sort_keys=True))" > VERSION.json.tmp
+    mv VERSION.json.tmp VERSION.json
+fi
+
 # read iRODS Version from JSON
 IRODSVERSION=`python -c "from __future__ import print_function; import json; d = json.loads(open('VERSION.json').read()); print(d['irods_version'])"`
 echo "IRODSVERSION=$IRODSVERSION" > VERSION.tmp # needed for Makefiles
@@ -536,10 +542,13 @@ if [ "$1" == "clean" ] ; then
     rm -f iRODS/lib/core/include/rodsVersion.h
     rm -f iRODS/server/core/include/irods_plugin_home_directory.hpp
     rm -f iRODS/lib/core/include/irods_home_directory.hpp
+    rm -f /tmp/$USER/setup_irods_configuration.flag
+
     # database plugin cleanup
     ./plugins/database/build.sh clean
     rm -f iRODS/config/platform.mk
     rm -f iRODS/config/config.mk
+    rm -f /tmp/$USER/setup_irods_database.flag
 
     # avro generated header files
     rm -f iRODS/lib/core/include/server_control_plane_command.hpp
